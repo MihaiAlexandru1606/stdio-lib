@@ -1,0 +1,94 @@
+
+ ____    _____             ____    ______  ____    ______   _____
+/\  _`\ /\  __`\          /\  _`\ /\__  _\/\  _`\ /\__  _\ /\  __`\
+\ \,\L\_\ \ \/\ \         \ \,\L\_\/_/\ \/\ \ \/\ \/_/\ \/ \ \ \/\ \
+ \/_\__ \\ \ \ \ \         \/_\__ \  \ \ \ \ \ \ \ \ \ \ \  \ \ \ \ \
+   /\ \L\ \ \ \_\ \          /\ \L\ \ \ \ \ \ \ \_\ \ \_\ \__\ \ \_\ \
+   \ `\____\ \_____\         \ `\____\ \ \_\ \ \____/ /\_____\\ \_____\
+    \/_____/\/_____/          \/_____/  \/_/  \/___/  \/_____/ \/_____/
+
+---------------------         Sisteme de Operare         -----------------------
+
+Proiect :  Stdio
+Nume : Niculescu
+Prenume : Mihai Alexandru
+Sistem de operare : Ubuntu 18.04 LTS 64bit && Windows 10
+Editor : CLion
+
+--------------------------------------------------------------------------------
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< Organizare >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    .
+    ├── Makefile
+    ├── README
+    ├── so_error_eof_fileno.c
+    ├── so_file.h
+    ├── so_open_close.c
+    ├── so_popen_pclose.c
+    ├── so_reads.c
+    ├── so_seek_tell.c
+    ├── so_stdio.h
+    └── so_writes.c
+
+
+    Structura SO_FILE contine un buffer, doi inticatori folositi la citire, un
+cursor pentru scrier, informati despre prcesul copil creat, ultima eroare,
+daca s-a ajuns la finalul fisierului SO_EOF, si un file descriptor/ Handle
+pentru fierul deschis.
+
+    In fiecare am implementat functile care se gasesc in denumirea fiserului.
+In plus fata de enuntul temei am mai facut o functie care scrie un numar de
+bytes, mai mic decat IO_BUFFER_SIZE(4096), ea este folosita de so_fwrite,
+functile "close"(pt a scrie resturile din buffer) si flush.
+
+    Pentru creare unui SO_FILE se alocam memorie si se apeleaza functie open,
+respective CreateFile, cu paramentri corespunzatori. Cand se face close se
+verifica mai intai nu cumava mai sunt date nescrise in buffer, daca da le scrie
+apoi inchide fiserul.
+
+    Pentru citire: se verifica daca are voie sa citesca din fisier. Daca da,
+se vede daca sunt date in buffer, in caz afirmativ se trimit detele din buffer.
+Daca nu se trimit daca existente, apoi se increaca citerea pana la numarul de
+bytes cerut, facandu-se cu ajutorul apelului de sistem, citindu-se cate 4096
+odata(sau incercand). Daca este depistata o eroare este semnalizat acest lucru
+si functia se opreste. Cand se ajunge la EOF, functia semanlieza acest lucru si
+se opreste. fgetc citeste un caracter cu ajutorul lui so_fwrite.
+
+    La exista o functie write_buffer, care incearca sa scrie toate datele din
+buffer, ea retuneza 0 in caz de eroare si numarul de bytes in caz de succes.
+so_fwrite verifica mai indai daca exita loc in buffer, daca da scrie acolo tot
+sau cati bytes intra. Cand se umple apleza write_buffer pana cand raman
+suficenti de putini bytes pentru a intra in buffer. so_fflush apeleaza
+write_buffer.
+
+    so_fseek verifica daca sunt date in buffer, la write le scrie si la read le
+invalideza apoi apeleza apelul de sistem corespunzator pentru deplasare
+cursorului. Un caz special este daca avem paramentru SEEK_CUR, atunci pozitea o
+sa fie varita in functie de numarul de date  citite dar ne folosite, trebui
+sa scada din offset acest numar.La so_fell se tine cont de numar de bytes citie
+dar nefolosite, se scata din positia indicata de apelul de sistem, iar cand sunt
+date descrise in buffer, se adauaga pozitia cusorului pentru scriere.
+
+    Functie din so_error_eof_fileno.c doar retuneza indicatorul din structura
+SO_FILE.
+
+    Pentru creare de procese, se foloste apelul de sistem fork/CreateProcess,
+informatie despre prcesul create sunt retinute in structura SO_FILE. Mai intai
+este create un pipe anonim, prin care o sa comunice cu procesul copil. Sunt
+inchise capetele ne folosiete, si se retine file descriptorul / handle prin
+care o sa comunice parintele cu copilul. Apoi este inlocutia imaginea copilului
+cu cea a comenzi. La inchidere, se inchide calea de comunicare, apoi se ateapta
+ca procesul copil sa termine si se retuneaza status-ul sau.
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< Rulare >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    Pentru crearea biblioteci:
+    *) make build / nmake build
+
+
+    Pentru eliminare executabil:
+    *) make clean / nmake clean
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
